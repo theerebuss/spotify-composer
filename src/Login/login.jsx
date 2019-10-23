@@ -13,14 +13,31 @@ export default class Login extends React.Component {
         super()
 
         const token = getToken()
-        if(!tokenIsEmpty(token))
-        {
+        if (!tokenIsEmpty(token)) {
             window.location.replace("/share")
         }
     }
 
+    getAuthorizationUri(client_id, redirect_uri, scopes = []) {
+        const url = "https://accounts.spotify.com/authorize"
+        const params = {
+            client_id,
+            redirect_uri,
+            response_type: "token"
+        }
+
+        if (scopes.length > 0) {
+            params.scope = scopes
+        }
+
+        const paramString = new URLSearchParams(params)
+        return `${url}?${paramString}`
+    }
+
     redirectSpotify() {
-        window.location.replace(`https://accounts.spotify.com/authorize?client_id=4311e063f31d4d0283389f60ad5785c1&redirect_uri=${"https:%2F%2Flocalhost:8080/callback"}&response_type=token`)
+        const authScopes = ["playlist-modify-private", "playlist-modify-public"]
+        const authUri = this.getAuthorizationUri("4311e063f31d4d0283389f60ad5785c1", "https://localhost:8080/callback", authScopes)
+        window.location.replace(authUri)
     }
 
     render() {
@@ -29,7 +46,7 @@ export default class Login extends React.Component {
                 <Typography variant="h4" gutterBottom>
                     Log into your Spotify account
                 </Typography>
-                <SpotifyButton onClick={this.redirectSpotify} variant="contained" color="primary">
+                <SpotifyButton onClick={this.redirectSpotify.bind(this)} variant="contained" color="primary">
                     Login with Spotify
                 </SpotifyButton>
             </div>

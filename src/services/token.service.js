@@ -9,7 +9,14 @@ export function getToken() {
 }
 
 export function setToken(token) {
-    if(!tokenIsEmpty(token)) {
+    if (!tokenIsEmpty(token)) {
         localStorage.setItem(authTokenKey, JSON.stringify(token))
+    } else {
+        localStorage.setItem(authTokenKey, null)
     }
+}
+
+export function clearToken() {
+    setToken()
+
 }
