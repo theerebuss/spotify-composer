@@ -39,7 +39,7 @@ export default class Login extends React.Component {
 
         const baseUrl = process.env.NODE_ENV == "production"
             ? "https://spotify-composer.azurewebsites.net"
-            : "https://localhost:8080"
+            : "http://localhost:9000"
 
         const authUri = this.getAuthorizationUri("4311e063f31d4d0283389f60ad5785c1", `${baseUrl}/callback`, authScopes)
 

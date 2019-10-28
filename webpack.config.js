@@ -1,27 +1,22 @@
-const HtmlWebPackPlugin = require('html-webpack-plugin')
-const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin')
-const WebpackPwaManifest = require('webpack-pwa-manifest')
-const CopyWebpackPlugin = require('copy-webpack-plugin')
-const EnvWebpackPlugin = require('env-webpack-plugin')
+const HtmlPlugin = require('html-webpack-plugin')
+const PwaManifest = require('webpack-pwa-manifest')
+const CopyPlugin = require('copy-webpack-plugin')
+const EnvPlugin = require('env-webpack-plugin')
+const WorkboxPlugin = require('workbox-webpack-plugin');
 const path = require('path')
 
-const htmlWebPackPlugin = new HtmlWebPackPlugin({
+const html = new HtmlPlugin({
   template: "./src/index.html",
   filename: "./index.html"
 })
 
-const serviceWorker = new SWPrecacheWebpackPlugin(
-  {
-    cacheId: 'spotify-composer-cache',
-    dontCacheBustUrlsMatching: /\.\w{8}\./,
-    filename: 'service-worker.js',
-    minify: true,
-    navigateFallback: '/index.html',
-    staticFileGlobsIgnorePatterns: [/\.map$/, /manifest\.json$/]
-  }
-)
+const workbox = new WorkboxPlugin.GenerateSW({
+  swDest: 'sw.js',
+  clientsClaim: true,
+  skipWaiting: true,
+})
 
-const manifest = new WebpackPwaManifest({
+const manifest = new PwaManifest({
   name: 'Spotify Compose',
   short_name: 'S.Compose',
   description: 'Composer for Spotify playlists',
@@ -30,28 +25,23 @@ const manifest = new WebpackPwaManifest({
   theme_color: '#1DB954',
   'theme-color': '#1DB954',
   filename: "manifest.json",
-  icons: [
-    {
-      src: path.resolve("src/images/logo.png"),
-      sizes: [96, 128, 192, 256, 384, 512],
-      destination: path.join('assets', 'icons')
-    }
-  ]
+  icons: [{
+    src: path.resolve("src/images/logo.png"),
+    sizes: [96, 128, 192, 256, 384, 512],
+    destination: path.join('assets', 'icons')
+  }]
 })
 
-const staticFileCopy = new CopyWebpackPlugin([
-  {
-    from: 'src/static',
-    to: ''
-  }
-])
+const staticFileCopy = new CopyPlugin([{
+  from: 'src/static',
+  to: ''
+}])
 
-const envPlugin = new EnvWebpackPlugin(["NODE_ENV"])
+const envPlugin = new EnvPlugin(["NODE_ENV"])
 
 module.exports = {
   module: {
-    rules: [
-      {
+    rules: [{
         test: /\.jsx|\.js$/,
         exclude: /node_modules/,
         use: {
@@ -72,12 +62,13 @@ module.exports = {
   },
   devServer: {
     historyApiFallback: true,
-    https: true
+    https: false,
+    port: 9000
   },
   plugins: [
     envPlugin,
-    htmlWebPackPlugin,
-    serviceWorker,
+    html,
+    workbox,
     manifest,
     staticFileCopy
   ]

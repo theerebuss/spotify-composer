@@ -27,15 +27,24 @@ export default class Share extends React.Component {
     }
 
     setPlaylist(event){
-        this.setState({selectedPlaylist: event.target.value});
+        this.spotify.getPlaylist(event.target.value).then(playlist => {
+            this.setState({ selectedPlaylist: playlist.id, trackCount: playlist.tracks.total})
+        })
     }
 
     add() {
-        this.spotify.addTracksToPlaylist(this.state.selectedPlaylist, this.state.tracks)
+        const playlistId = this.state.selectedPlaylist
+        this.spotify.addTracksToPlaylist(playlistId, this.state.tracks)
+            .then(() => {
+                this.spotify.getPlaylist(playlistId).then((playlist) => this.setState({trackCount: playlist.tracks.total}))
+            })
     }
 
     componentDidMount() {
-        this.spotify.getUserPlaylists().then(res => this.setState({ playlists: res, selectedPlaylist: res[0].id }))
+        this.spotify.getUserPlaylists().then(playlists => {
+            const playlist = playlists[0]
+            this.setState({ playlists, selectedPlaylist: playlist.id, trackCount: playlist.tracks.total})
+        })
 
         const albumId = "1seeMmdvQUplCh1cTRbWJx"
         this.spotify.getAlbumById(albumId)
@@ -54,6 +63,7 @@ export default class Share extends React.Component {
 
             <select onChange={this.setPlaylist.bind(this)}>{options}</select>
             <button onClick={this.add.bind(this)}>Add</button>
+            <span> {this.state.trackCount} tracks</span>
         </div>
     }
 }
