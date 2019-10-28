@@ -3,7 +3,10 @@ const PwaManifest = require('webpack-pwa-manifest')
 const CopyPlugin = require('copy-webpack-plugin')
 const EnvPlugin = require('env-webpack-plugin')
 const WorkboxPlugin = require('workbox-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path')
+
+const cleanup = new CleanWebpackPlugin()
 
 const html = new HtmlPlugin({
   template: "./src/index.html",
@@ -22,13 +25,16 @@ const manifest = new PwaManifest({
   description: 'Composer for Spotify playlists',
   background_color: '#1DB954',
   start_url: "/",
+  inject: true,
+  ios: true,
   theme_color: '#1DB954',
   'theme-color': '#1DB954',
   filename: "manifest.json",
   icons: [{
     src: path.resolve("src/images/logo.png"),
     sizes: [96, 128, 192, 256, 384, 512],
-    destination: path.join('assets', 'icons')
+    destination: path.join('assets', 'icons'),
+    ios: true
   }]
 })
 
@@ -66,6 +72,7 @@ module.exports = {
     port: 9000
   },
   plugins: [
+    cleanup,
     envPlugin,
     html,
     workbox,
