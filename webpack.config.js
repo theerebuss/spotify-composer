@@ -1,9 +1,9 @@
 const HtmlWebPackPlugin = require('html-webpack-plugin')
 const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin')
 const WebpackPwaManifest = require('webpack-pwa-manifest')
+const CopyWebpackPlugin = require('copy-webpack-plugin')
+const EnvWebpackPlugin = require('env-webpack-plugin')
 const path = require('path')
-
-const PUBLIC_PATH = 'https://localhost:8080'
 
 const htmlWebPackPlugin = new HtmlWebPackPlugin({
   template: "./src/index.html",
@@ -16,7 +16,7 @@ const serviceWorker = new SWPrecacheWebpackPlugin(
     dontCacheBustUrlsMatching: /\.\w{8}\./,
     filename: 'service-worker.js',
     minify: true,
-    navigateFallback: PUBLIC_PATH + '/index.html',
+    navigateFallback: '/index.html',
     staticFileGlobsIgnorePatterns: [/\.map$/, /manifest\.json$/]
   }
 )
@@ -26,9 +26,10 @@ const manifest = new WebpackPwaManifest({
   short_name: 'S.Compose',
   description: 'Composer for Spotify playlists',
   background_color: '#1DB954',
+  start_url: "/",
   theme_color: '#1DB954',
   'theme-color': '#1DB954',
-  start_url: '/',
+  filename: "manifest.json",
   icons: [
     {
       src: path.resolve("src/images/logo.png"),
@@ -37,6 +38,15 @@ const manifest = new WebpackPwaManifest({
     }
   ]
 })
+
+const staticFileCopy = new CopyWebpackPlugin([
+  {
+    from: 'src/static',
+    to: ''
+  }
+])
+
+const envPlugin = new EnvWebpackPlugin(["NODE_ENV"])
 
 module.exports = {
   module: {
@@ -57,15 +67,18 @@ module.exports = {
     ]
   },
   output: {
-    publicPath: PUBLIC_PATH
+    filename: '[name].[hash].js',
+    path: path.resolve(__dirname, 'dist'),
   },
   devServer: {
     historyApiFallback: true,
     https: true
   },
   plugins: [
+    envPlugin,
     htmlWebPackPlugin,
     serviceWorker,
-    manifest
+    manifest,
+    staticFileCopy
   ]
 }

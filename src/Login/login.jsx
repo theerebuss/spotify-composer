@@ -36,7 +36,13 @@ export default class Login extends React.Component {
 
     redirectSpotify() {
         const authScopes = ["playlist-modify-private", "playlist-modify-public"]
-        const authUri = this.getAuthorizationUri("4311e063f31d4d0283389f60ad5785c1", "https://localhost:8080/callback", authScopes)
+
+        const baseUrl = process.env.NODE_ENV == "production"
+            ? "https://spotify-composer.azurewebsites.net"
+            : "https://localhost:8080"
+
+        const authUri = this.getAuthorizationUri("4311e063f31d4d0283389f60ad5785c1", `${baseUrl}/callback`, authScopes)
+
         window.location.replace(authUri)
     }
 

@@ -4,6 +4,12 @@ import Login from "./Login/login.jsx"
 import Callback from "./Callback/callback.jsx"
 import Share from "./Share/share.jsx"
 
+(function() {
+  if('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js');
+  }
+})();
+
 const App = () => {
   return (
     <Router>
