@@ -1,10 +1,12 @@
+const Webpack = require('webpack')
 const HtmlPlugin = require('html-webpack-plugin')
 const PwaManifest = require('webpack-pwa-manifest')
 const CopyPlugin = require('copy-webpack-plugin')
-const EnvPlugin = require('env-webpack-plugin')
-const WorkboxPlugin = require('workbox-webpack-plugin');
-const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const WorkboxPlugin = require('workbox-webpack-plugin')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const path = require('path')
+
+const version = require('./package.json').version || 0
 
 const cleanup = new CleanWebpackPlugin()
 
@@ -21,7 +23,7 @@ const workbox = new WorkboxPlugin.GenerateSW({
 
 const manifest = new PwaManifest({
   name: 'Spotify Compose',
-  short_name: 'S.Compose',
+  short_name: 'Spotify Compose',
   description: 'Composer for Spotify playlists',
   background_color: '#1DB954',
   start_url: "/",
@@ -35,7 +37,15 @@ const manifest = new PwaManifest({
     sizes: [96, 128, 192, 256, 384, 512],
     destination: path.join('assets', 'icons'),
     ios: true
-  }]
+  }],
+  share_target: {
+    action: "/share",
+    method: "GET",
+    enctype: "application/x-www-form-urlencoded",
+    params: {
+      text: "text"
+    }
+  }
 })
 
 const staticFileCopy = new CopyPlugin([{
@@ -43,23 +53,26 @@ const staticFileCopy = new CopyPlugin([{
   to: ''
 }])
 
-const envPlugin = new EnvPlugin(["NODE_ENV"])
+const definePlugin = new Webpack.DefinePlugin({
+  'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+  'process.env.PACKAGE_VERSION': JSON.stringify(version)
+})
 
 module.exports = {
   module: {
     rules: [{
-        test: /\.jsx|\.js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: "babel-loader"
-        }
-      },
-      {
-        test: /\.(png|svg|jpg|gif)$/,
-        use: [
-          'file-loader',
-        ],
-      },
+      test: /\.jsx|\.js$/,
+      exclude: /node_modules/,
+      use: {
+        loader: "babel-loader"
+      }
+    },
+    {
+      test: /\.(png|svg|jpg|gif)$/,
+      use: [
+        'file-loader',
+      ],
+    },
     ]
   },
   output: {
@@ -73,7 +86,7 @@ module.exports = {
   },
   plugins: [
     cleanup,
-    envPlugin,
+    definePlugin,
     html,
     workbox,
     manifest,

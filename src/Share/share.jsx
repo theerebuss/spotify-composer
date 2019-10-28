@@ -14,7 +14,8 @@ export default class Share extends React.Component {
             token: token,
             selectedPlaylist: null,
             playlists: [],
-            tracks: []
+            tracks: [],
+            hasUrl: undefined
         }
 
         this.spotify = new SpotifyService(`${token.token_type} ${token.access_token}`)
@@ -26,9 +27,9 @@ export default class Share extends React.Component {
         window.location.replace("/")
     }
 
-    setPlaylist(event){
+    setPlaylist(event) {
         this.spotify.getPlaylist(event.target.value).then(playlist => {
-            this.setState({ selectedPlaylist: playlist.id, trackCount: playlist.tracks.total})
+            this.setState({ selectedPlaylist: playlist.id, trackCount: playlist.tracks.total })
         })
     }
 
@@ -36,22 +37,33 @@ export default class Share extends React.Component {
         const playlistId = this.state.selectedPlaylist
         this.spotify.addTracksToPlaylist(playlistId, this.state.tracks)
             .then(() => {
-                this.spotify.getPlaylist(playlistId).then((playlist) => this.setState({trackCount: playlist.tracks.total}))
+                this.spotify.getPlaylist(playlistId).then((playlist) => this.setState({ trackCount: playlist.tracks.total }))
             })
     }
 
+    parseUrlParam() {
+        const parsedUrl = new URL(window.location)
+        const url = parsedUrl.searchParams.get('text') || ""
+        const matches = url.match(/\/(?!.*\/)(.+?)\?/) || []
+        return matches.length == 2 ? matches[1] : null
+    }
+
     componentDidMount() {
+        const albumId = this.parseUrlParam()
+        this.setState({ hasUrl: !!albumId })
+
+        if (!albumId) return
+
         this.spotify.getUserPlaylists().then(playlists => {
             const playlist = playlists[0]
-            this.setState({ playlists, selectedPlaylist: playlist.id, trackCount: playlist.tracks.total})
+            this.setState({ playlists, selectedPlaylist: playlist.id, trackCount: playlist.tracks.total })
         })
 
-        const albumId = "1seeMmdvQUplCh1cTRbWJx"
         this.spotify.getAlbumById(albumId)
             .then((album) => this.spotify.getAlbumTracks(album))
             .then((tracks) => {
                 const trackUris = tracks.map((track) => track.uri)
-                this.setState({ tracks: trackUris})
+                this.setState({ tracks: trackUris })
             })
     }
 
@@ -59,11 +71,22 @@ export default class Share extends React.Component {
         var options = [].concat(this.state.playlists).map(({ id, name }) => <option key={id} value={id}>{name}</option>)
 
         return <div>
-            <button onClick={this.logout.bind(this)}>🚧 Logout 🚧</button><br /><br />
+            {
+                this.state.hasUrl !== undefined ?
+                    this.state.hasUrl ?
 
-            <select onChange={this.setPlaylist.bind(this)}>{options}</select>
-            <button onClick={this.add.bind(this)}>Add</button>
-            <span> {this.state.trackCount} tracks</span>
+                        <div>
+                            <button onClick={this.logout.bind(this)}>🚧 Logout 🚧</button><br /><br />
+
+                            <select onChange={this.setPlaylist.bind(this)}>{options}</select>
+                            <button onClick={this.add.bind(this)}>Add</button>
+                            <span> {this.state.trackCount} tracks</span>
+                        </div>
+
+                        : <span>No valid URL was provided</span>
+
+                    : <div></div>
+            }
         </div>
     }
 }
