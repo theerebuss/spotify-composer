@@ -1,12 +1,7 @@
 import React from "react"
-import Button from '@material-ui/core/Button';
-import { styled } from '@material-ui/styles';
-import { Typography } from "@material-ui/core";
+import Typography from "@material-ui/core/Typography";
 import { getToken, tokenIsEmpty } from "../services/token.service";
-
-const SpotifyButton = styled(Button)({
-    background: '#1DB954'
-});
+import ActionButton from "../components/action-button.jsx";
 
 export default class Login extends React.Component {
     constructor() {
@@ -15,6 +10,10 @@ export default class Login extends React.Component {
         const token = getToken()
         if (!tokenIsEmpty(token)) {
             window.location.replace("/share")
+        }
+        
+        this.state = {
+            loading: false
         }
     }
 
@@ -35,6 +34,7 @@ export default class Login extends React.Component {
     }
 
     redirectSpotify() {
+        this.setState({loading: true})
         const authScopes = ["playlist-modify-private", "playlist-modify-public"]
 
         const baseUrl = process.env.NODE_ENV == "production"
@@ -52,9 +52,7 @@ export default class Login extends React.Component {
                 <Typography variant="h4" gutterBottom>
                     Log into your Spotify account
                 </Typography>
-                <SpotifyButton onClick={this.redirectSpotify.bind(this)} variant="contained" color="primary">
-                    Login with Spotify
-                </SpotifyButton>
+                <ActionButton onClick={this.redirectSpotify.bind(this)} text="Login with Spotify" loading={this.state.loading}></ActionButton>
             </div>
         );
     }

@@ -18,5 +18,4 @@ export function setToken(token) {
 
 export function clearToken() {
     setToken()
-
 }

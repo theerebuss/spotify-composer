@@ -1,43 +1,61 @@
 import React from "react"
 import { getToken, tokenIsEmpty, clearToken } from "../services/token.service.js"
 import SpotifyService from "../services/spotify.service.js"
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import Button from '@material-ui/core/Button';
+import InputLabel from "@material-ui/core/InputLabel";
+import { FormHelperText, Grid } from "@material-ui/core";
+import ActionButton from '../components/action-button.jsx'
+
+const shareIdKey = "spotifySharedIdKey"
 
 export default class Share extends React.Component {
     constructor() {
         super()
+
+        const shareId = this.parseUrlParam() || JSON.parse(localStorage.getItem(shareIdKey))
+        localStorage.setItem(shareIdKey, JSON.stringify(shareId))
 
         const token = getToken()
         if (tokenIsEmpty(token)) {
             window.location.replace("/")
         }
         this.state = {
-            token: token,
+            token,
             selectedPlaylist: null,
             playlists: [],
             tracks: [],
-            hasUrl: undefined
+            shareId: shareId || undefined,
+            loading: false
         }
 
         this.spotify = new SpotifyService(`${token.token_type} ${token.access_token}`)
     }
 
-    logout() {
-        clearToken()
-        this.setState({ token: null })
+    redirectToRoot() {
         window.location.replace("/")
     }
 
+    logout() {
+        clearToken()
+        this.setState({ token: null })
+        this.redirectToRoot()
+    }
+
     setPlaylist(event) {
+        this.setState({ selectedPlaylistId: event.target.value })
         this.spotify.getPlaylist(event.target.value).then(playlist => {
-            this.setState({ selectedPlaylist: playlist.id, trackCount: playlist.tracks.total })
+            this.setState({ selectedPlaylistTrackCount: playlist.tracks.total })
         })
     }
 
     add() {
-        const playlistId = this.state.selectedPlaylist
-        this.spotify.addTracksToPlaylist(playlistId, this.state.tracks)
+        this.setState({ loading: true })
+        this.spotify.addTracksToPlaylist(this.state.selectedPlaylistId, this.state.tracks)
             .then(() => {
-                this.spotify.getPlaylist(playlistId).then((playlist) => this.setState({ trackCount: playlist.tracks.total }))
+                this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
+                    this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
             })
     }
 
@@ -49,43 +67,52 @@ export default class Share extends React.Component {
     }
 
     componentDidMount() {
-        const albumId = this.parseUrlParam()
-        this.setState({ hasUrl: !!albumId })
-
-        if (!albumId) return
+        if (!this.state.shareId) return
 
         this.spotify.getUserPlaylists().then(playlists => {
             const playlist = playlists[0]
-            this.setState({ playlists, selectedPlaylist: playlist.id, trackCount: playlist.tracks.total })
-        })
+            this.setState({ playlists, selectedPlaylistId: playlist.id, selectedPlaylistTrackCount: playlist.tracks.total })
+        }).catch(error => this.logout())
 
-        this.spotify.getAlbumById(albumId)
+        this.spotify.getAlbumById(this.state.shareId)
             .then((album) => this.spotify.getAlbumTracks(album))
             .then((tracks) => {
                 const trackUris = tracks.map((track) => track.uri)
                 this.setState({ tracks: trackUris })
             })
+            .catch(error => this.logout())
     }
 
     render() {
-        var options = [].concat(this.state.playlists).map(({ id, name }) => <option key={id} value={id}>{name}</option>)
+        var options = [].concat(this.state.playlists).map(({ id, name }) => {
+            return <MenuItem key={id} value={id}>{name}</MenuItem>
+        })
 
         return <div>
             {
-                this.state.hasUrl !== undefined ?
-                    this.state.hasUrl ?
+                this.state.shareId ?
+                    this.state.selectedPlaylistId ?
+                        <Grid container spacing={2} direction="column">
+                            <Grid item>
+                                <Button onClick={this.logout.bind(this)} variant="outlined">🚧 Logout 🚧</Button>
+                            </Grid>
 
-                        <div>
-                            <button onClick={this.logout.bind(this)}>🚧 Logout 🚧</button><br /><br />
+                            <Grid item xs={12}>
+                                <InputLabel id="playlists-label" shrink>Playlist</InputLabel>
+                                <Select id="playlists" onChange={this.setPlaylist.bind(this)}
+                                    labelId="playlists-label" value={this.state.selectedPlaylistId} displayEmpty>
+                                    {options}
+                                </Select>
+                                <FormHelperText>{this.state.selectedPlaylistTrackCount} tracks</FormHelperText>
+                            </Grid>
 
-                            <select onChange={this.setPlaylist.bind(this)}>{options}</select>
-                            <button onClick={this.add.bind(this)}>Add</button>
-                            <span> {this.state.trackCount} tracks</span>
-                        </div>
+                            <Grid item>
+                                <ActionButton onClick={this.add.bind(this)} text="Add" loading={this.state.loading}></ActionButton>
+                            </Grid>
+                        </Grid>
+                        : <div></div>
 
-                        : <span>No valid URL was provided</span>
-
-                    : <div></div>
+                    : <span>No valid URL was provided</span>
             }
         </div>
     }
