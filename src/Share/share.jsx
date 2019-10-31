@@ -58,9 +58,8 @@ export default class Share extends React.Component {
         this.setState({ loading: true })
         this.spotify.addTracksToPlaylist(this.state.selectedPlaylistId, this.state.tracks)
             .then(() => {
-                window.stop()
-                // this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
-                //     this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
+                this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
+                    this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
             })
     }
 
