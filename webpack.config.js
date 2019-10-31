@@ -19,7 +19,7 @@ module.exports = (env, argv) => {
   const workbox = new WorkboxPlugin.GenerateSW({
     swDest: 'sw.js',
     clientsClaim: true,
-    skipWaiting: true,
+    skipWaiting: true
   })
 
   const manifest = new PwaManifest({

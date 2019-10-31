@@ -3,10 +3,13 @@ import { getToken, tokenIsEmpty, clearToken } from "../services/token.service.js
 import SpotifyService from "../services/spotify.service.js"
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import Button from '@material-ui/core/Button';
 import InputLabel from "@material-ui/core/InputLabel";
-import { FormHelperText, Grid } from "@material-ui/core";
+import FormHelperText from "@material-ui/core/FormHelperText";
 import ActionButton from '../components/action-button.jsx'
+import VersionFooter from '../Footer/footer.jsx'
+import SpotifyItem from "../components/spotify-item.jsx";
+import Typography from "@material-ui/core/Typography";
+import Grid from "@material-ui/core/Grid";
 
 const shareIdKey = "spotifySharedIdKey"
 
@@ -23,6 +26,7 @@ export default class Share extends React.Component {
         }
         this.state = {
             token,
+            sharedItem: null,
             selectedPlaylist: null,
             playlists: [],
             tracks: [],
@@ -54,8 +58,9 @@ export default class Share extends React.Component {
         this.setState({ loading: true })
         this.spotify.addTracksToPlaylist(this.state.selectedPlaylistId, this.state.tracks)
             .then(() => {
-                this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
-                    this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
+                window.stop()
+                // this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
+                //     this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
             })
     }
 
@@ -72,15 +77,19 @@ export default class Share extends React.Component {
         this.spotify.getUserPlaylists().then(playlists => {
             const playlist = playlists[0]
             this.setState({ playlists, selectedPlaylistId: playlist.id, selectedPlaylistTrackCount: playlist.tracks.total })
-        }).catch(error => this.logout())
+        }).catch(() => this.logout())
 
         this.spotify.getAlbumById(this.state.shareId)
-            .then((album) => this.spotify.getAlbumTracks(album))
+            .then((album) => {
+                this.setState({ sharedItem: album })
+
+                return this.spotify.getAlbumTracks(album)
+            })
             .then((tracks) => {
                 const trackUris = tracks.map((track) => track.uri)
                 this.setState({ tracks: trackUris })
             })
-            .catch(error => this.logout())
+            .catch(() => this.logout())
     }
 
     render() {
@@ -94,10 +103,18 @@ export default class Share extends React.Component {
                     this.state.selectedPlaylistId ?
                         <Grid container spacing={2} direction="column">
                             <Grid item>
-                                <Button onClick={this.logout.bind(this)} variant="outlined">🚧 Logout 🚧</Button>
+                                <ActionButton onClick={this.logout.bind(this)} variant="outlined" text="🚧 Logout 🚧" />
                             </Grid>
 
-                            <Grid item xs={12}>
+                            <Grid item>
+                                <Typography variant="h6" gutterBottom>
+                                    Album being added:
+                                </Typography>
+                                <SpotifyItem item={this.state.sharedItem}></SpotifyItem>
+                            </Grid>
+
+                            <Grid item>
+                                <Typography variant="h6">Add to:</Typography>
                                 <InputLabel id="playlists-label" shrink>Playlist</InputLabel>
                                 <Select id="playlists" onChange={this.setPlaylist.bind(this)}
                                     labelId="playlists-label" value={this.state.selectedPlaylistId} displayEmpty>
@@ -107,10 +124,14 @@ export default class Share extends React.Component {
                             </Grid>
 
                             <Grid item>
-                                <ActionButton onClick={this.add.bind(this)} text="Add" loading={this.state.loading}></ActionButton>
+                                <ActionButton onClick={this.add.bind(this)} text="Add" loading={this.state.loading} />
+                            </Grid>
+
+                            <Grid item>
+                                <VersionFooter />
                             </Grid>
                         </Grid>
-                        : <div></div>
+                        : null
 
                     : <span>No valid URL was provided</span>
             }
