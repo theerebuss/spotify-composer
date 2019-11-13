@@ -5,12 +5,12 @@ export default class SpotifyService {
     this.token = token
   }
 
-  getAlbumById(id) {
-    return this.get(`https://api.spotify.com/v1/albums/${id}`)
+  getById(id, context = "albums") {
+    return this.get(`https://api.spotify.com/v1/${context}/${id}`)
   }
 
-  getAlbumTracks(album) {
-    return this.get(album.tracks.href).then((response) => response.items)
+  getElementTracks(element) {
+    return this.get(element.tracks.href).then((response) => response.items)
   }
 
   getUserPlaylists() {
@@ -36,6 +36,5 @@ export default class SpotifyService {
         'Authorization': this.token
       }
     }).then((response) => response.data)
-      .catch((response) => { console.log(response) })
   }
 }

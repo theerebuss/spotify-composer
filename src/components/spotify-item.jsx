@@ -2,25 +2,25 @@ import React from "react"
 import { Grid, Typography } from "@material-ui/core"
 
 const imageStyle = {
-    width: '100%',
-    maxWidth: '450px'
+    width: '450px',
+    maxWidth: '100%'
 }
 
-function SpotifyItem({ item }) {
-    return <Grid container direction="column">
+function SpotifyItem({ value }) {
+    return value ? <Grid container direction="column">
         {
-            item.images && item.images.length > 0 ?
+            value.images && value.images.length > 0 ?
                 <Grid item>
-                    <img src={item.images[0].url} style={imageStyle} alt="album cover" />
+                    <img style={imageStyle} src={value.images[0].url} alt="album cover" />
                 </Grid>
 
                 : null
         }
         <Grid item>
-            <Typography variant='h5'>{item.name}</Typography>
-            <Typography variant='caption'>{item.tracks.total} tracks</Typography>
+            <Typography variant='h5'>{value.name}</Typography>
+            <Typography variant='caption'>{value.tracks.total} tracks</Typography>
         </Grid>
-    </Grid>
+    </Grid> : null
 }
 
 export default SpotifyItem
