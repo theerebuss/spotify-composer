@@ -51,7 +51,7 @@ export default class Share extends React.Component {
 
     add() {
         this.setState({ loading: true })
-        this.spotify.addTracksToPlaylist(this.state.selectedPlaylistId, this.state.tracks)
+        this.spotify.addTracksToPlaylistRecursive(this.state.selectedPlaylistId, this.state.tracks)
             .then(() => {
                 this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
                     this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
@@ -61,7 +61,7 @@ export default class Share extends React.Component {
     parseUrlParam() {
         const parsedUrl = new URL(window.location)
         const url = parsedUrl.searchParams.get('text')
-        
+
         if (!url) return
 
         const terminatorPos = url.indexOf("?")
@@ -82,7 +82,7 @@ export default class Share extends React.Component {
         let sharedObject = this.parseUrlParam()
         const localObject = JSON.parse(localStorage.getItem(shareIdKey))
 
-        if(!sharedObject) {
+        if (!sharedObject) {
             sharedObject = localObject
             localStorage.removeItem(shareIdKey)
         }
@@ -118,11 +118,8 @@ export default class Share extends React.Component {
             .then((item) => {
                 this.setState({ sharedSpotifyItem: item })
 
-                return this.spotify.getElementTracks(item)
-            })
-            .then((tracks) => {
                 // Playlist tracks have the track object inside of a 'track' parameter
-                const trackUris = tracks.map((track) => track.uri || track.track.uri)
+                const trackUris = item.tracks.items.map((track) => track.uri || track.track.uri)
                 this.setState({ tracks: trackUris })
             }).catch(error => this.handleError(error))
     }
