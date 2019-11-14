@@ -53,7 +53,7 @@ export default class Share extends React.Component {
         this.setState({ loading: true })
         this.spotify.addTracksToPlaylistRecursive(this.state.selectedPlaylistId, this.state.tracks)
             .then(() => {
-                this.spotify.getPlaylist(this.state.selectedPlaylistId).then((playlist) =>
+                this.spotify.getPlaylist(this.state.selectedPlaylistId).then(playlist =>
                     this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
             })
     }
@@ -105,7 +105,7 @@ export default class Share extends React.Component {
 
     componentDidMount() {
         if (!this.state.sharedItem) {
-            this.setShareError("Invalid item was provided. Needs to be an album or a playlist.")
+            this.setShareError("Invalid item was provided. Needs to be an album, playlist or artist.")
             return
         }
 
@@ -115,7 +115,7 @@ export default class Share extends React.Component {
         }).catch(error => this.handleError(error))
 
         this.spotify.getById(this.state.sharedItem.id, this.state.sharedItem.context)
-            .then((item) => {
+            .then(item => {
                 this.setState({ sharedSpotifyItem: item })
 
                 // Playlist tracks have the track object inside of a 'track' parameter
