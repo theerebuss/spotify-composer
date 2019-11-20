@@ -12,6 +12,7 @@ import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
 
 const shareIdKey = "spotifySharedItem"
+const newPlaylistKey = "newPlaylist"
 
 export default class Share extends React.Component {
     constructor() {
@@ -23,6 +24,7 @@ export default class Share extends React.Component {
         if (tokenIsEmpty(token)) {
             this.redirectToRoot()
         }
+
         this.state = {
             hasError: false,
             errorMessage: null,
@@ -30,6 +32,7 @@ export default class Share extends React.Component {
             sharedItem,
             sharedSpotifyItem: null,
             selectedPlaylist: null,
+            selectedPlaylistId: newPlaylistKey,
             playlists: [],
             tracks: [],
             loading: false
@@ -42,20 +45,37 @@ export default class Share extends React.Component {
         window.location.replace("/")
     }
 
-    setPlaylist(event) {
-        this.setState({ selectedPlaylistId: event.target.value })
-        this.spotify.getPlaylist(event.target.value).then(playlist => {
-            this.setState({ selectedPlaylistTrackCount: playlist.tracks.total })
-        })
+    onPlaylistChange(event) {
+        this.setState({ selectedPlaylistId: event ?.target ?.value })
+        if (event ?.target ?.value == newPlaylistKey) {
+            this.setState({ selectedPlaylist: null })
+            return
+        }
+
+        this.spotify.getPlaylist(event.target.value).then(playlist =>
+            this.setState({ selectedPlaylist: playlist })
+        )
     }
 
     add() {
         this.setState({ loading: true })
-        this.spotify.addTracksToPlaylistRecursive(this.state.selectedPlaylistId, this.state.tracks)
-            .then(() => {
-                this.spotify.getPlaylist(this.state.selectedPlaylistId).then(playlist =>
-                    this.setState({ selectedPlaylistTrackCount: playlist.tracks.total, loading: false }))
-            })
+
+        if (this.state.selectedPlaylistId == newPlaylistKey) {
+            this.spotify.createPlaylist(this.state.user, this.state.sharedSpotifyItem.name)
+                .then(playlist => this.addToPlaylist(playlist.id, this.state.tracks))
+        }
+        else {
+            this.addToPlaylist(this.state.selectedPlaylistId, this.state.tracks)
+        }
+    }
+
+    addToPlaylist(playlistId, tracks) {
+        return this.spotify.addTracksToPlaylistRecursive(playlistId, tracks)
+            .then(() => this.spotify.getPlaylist(playlistId))
+            .then(playlist => this.setState({
+                selectedPlaylist: playlist,
+                loading: false
+            }))
     }
 
     parseUrlParam() {
@@ -109,13 +129,15 @@ export default class Share extends React.Component {
             return
         }
 
-        this.spotify.getUserPlaylists().then(playlists => {
-            const playlist = playlists[0]
-            this.setState({ playlists, selectedPlaylistId: playlist.id, selectedPlaylistTrackCount: playlist.tracks.total })
-        }).catch(error => this.handleError(error))
+        this.spotify.getUserPlaylists()
+            .then(playlists => this.setState({ playlists }))
+            .catch(error => this.handleError(error))
 
-        this.spotify.getById(this.state.sharedItem.id, this.state.sharedItem.context)
-            .then(item => {
+        this.spotify.getUser()
+            .then(user => {
+                this.setState({ user })
+                return this.spotify.getById(this.state.sharedItem.id, user.country, this.state.sharedItem.context)
+            }).then(item => {
                 this.setState({ sharedSpotifyItem: item })
 
                 // Playlist tracks have the track object inside of a 'track' parameter
@@ -137,31 +159,30 @@ export default class Share extends React.Component {
         return <div>
             {
                 !this.state.hasError ?
-                    this.state.selectedPlaylistId ?
-                        <Grid container spacing={2} direction="column">
-                            <Grid item>
-                                <SpotifyItem value={this.state.sharedSpotifyItem}></SpotifyItem>
-                            </Grid>
-
-                            <Grid item>
-                                <Typography variant="subtitle1">Add tracks to:</Typography>
-                                <InputLabel id="playlists-label" shrink>Playlist</InputLabel>
-                                <Select id="playlists" onChange={this.setPlaylist.bind(this)}
-                                    labelId="playlists-label" value={this.state.selectedPlaylistId} displayEmpty>
-                                    {options}
-                                </Select>
-                                <FormHelperText>{this.state.selectedPlaylistTrackCount} tracks</FormHelperText>
-                            </Grid>
-
-                            <Grid item>
-                                <ActionButton onClick={this.add.bind(this)} text="Add" loading={this.state.loading} />
-                            </Grid>
-
-                            <Grid item>
-                                <VersionFooter />
-                            </Grid>
+                    <Grid container spacing={2} direction="column">
+                        <Grid item>
+                            <SpotifyItem value={this.state.sharedSpotifyItem}></SpotifyItem>
                         </Grid>
-                        : null
+
+                        <Grid item>
+                            <Typography variant="subtitle1">Add tracks to:</Typography>
+                            <InputLabel id="playlists-label" shrink>Playlist</InputLabel>
+                            <Select id="playlists" onChange={this.onPlaylistChange.bind(this)}
+                                labelId="playlists-label" value={this.state.selectedPlaylistId}>
+                                <MenuItem key={newPlaylistKey} value={newPlaylistKey}><i>New Playlist</i></MenuItem>
+                                {options}
+                            </Select>
+                            <FormHelperText>{this.state ?.selectedPlaylist ?.tracks ?.total ?? 0} tracks</FormHelperText>
+                        </Grid>
+
+                        <Grid item>
+                            <ActionButton onClick={this.add.bind(this)} text="Add" loading={this.state.loading} />
+                        </Grid>
+
+                        <Grid item>
+                            <VersionFooter />
+                        </Grid>
+                    </Grid>
 
                     : <span>{this.state.errorMessage}</span>
             }

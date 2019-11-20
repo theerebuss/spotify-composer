@@ -6,10 +6,10 @@ export default class SpotifyService {
     this.endpoint = "https://api.spotify.com/v1"
   }
 
-  getById(id, context = "albums") {
+  getById(id, countryCode, context = "albums") {
     return new Promise(resolve => {
       if (context === "artists") {
-        return this.getArtistWithTracks(id).then(artist => resolve(artist))
+        return this.getArtistWithTracks(id, countryCode).then(artist => resolve(artist))
       } else {
         this.get(`${this.endpoint}/${context}/${id}`).then(item => {
           if (!item.tracks.next) {
@@ -26,12 +26,12 @@ export default class SpotifyService {
     })
   }
 
-  getArtistWithTracks(id) {
+  getArtistWithTracks(id, countryCode) {
     let artist = {}
 
     return Promise.all([
       this.getArtist(id).then(result => artist = { ...artist, ...result }),
-      this.getUser().then(user => this.getArtistsAlbums(id, user.country))
+      this.getArtistsAlbums(id, countryCode)
         .then(albums => Promise.all(albums.items.map(album => this.getAlbumTracks(album.id))))
         .then(result => {
           const totalTracks = result.flatMap(albumTracks => albumTracks.items)
@@ -98,6 +98,18 @@ export default class SpotifyService {
     }
   }
 
+  createPlaylist(user, name) {
+    return this.post(`${this.endpoint}/users/${user.id}/playlists`, {
+      name,
+      public: false,
+      collaborative: false
+    }).then(playlist => {
+      if (playlist.images ?.length > 0) {
+        // this.post(`${this.endpoint}/playlists/${playlist.id}/images`, base64CoverImage, 'image/jpeg')
+      }
+    })
+  }
+
   get(uri, params) {
     return axios.get(uri, {
       headers: {
@@ -107,11 +119,11 @@ export default class SpotifyService {
     }).then(response => response.data)
   }
 
-  post(uri, body) {
+  post(uri, body, contentType = 'application/json') {
     return axios.post(uri, body, {
       headers: {
         'Authorization': this.token,
-        'Content-Type': 'application/json'
+        'Content-Type': contentType
       }
     }).then(response => response.data)
   }

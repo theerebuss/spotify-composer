@@ -1,6 +1,6 @@
 {
   "name": "spotify-composer",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Spotify playlist composer",
   "main": "index.js",
   "scripts": {
@@ -11,11 +11,15 @@
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "~7.7.2",
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.4.4",
+    "@babel/plugin-proposal-optional-chaining": "^7.6.0",
     "@babel/preset-env": "~7.7.1",
     "@babel/preset-react": "~7.7.0",
+    "babel-eslint": "^10.0.3",
     "babel-loader": "~8.0.6",
     "clean-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^5.0.4",
+    "eslint": "^6.6.0",
     "html-webpack-plugin": "~3.2.0",
     "js-beautify": "^1.10.2",
     "webpack": "~4.41.0",
